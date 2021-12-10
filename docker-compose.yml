@@ -1,0 +1,39 @@
+  influxdb:
+      image: influxdb:1.8
+      container_name: influxdb
+      restart: always
+      ports:
+        - "8086:8086"
+      environment:
+        - INFLUXDB_REPORTING_DISABLED=false
+      volumes:
+        - influxdb:/var/lib/influxdb
+  telegraf:
+    image: telegraf:1.8
+    container_name: telegraf
+    privileged: true
+    restart: always
+    environment:
+      - HOST_PROC=/rootfs/proc
+      - HOST_SYS=/rootfs/sys
+      - HOST_MOUNT_PREFIX=/rootfs
+    net: host
+    volumes:
+      - /:/rootfs:ro
+      - /proc:/rootfs/proc:ro
+      - /sys:/rootfs/sys:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - # path of directory or file of log which you want to bind :/var/log/<file or directory name>
+      - # path of {telegraf.conf}:/etc/telegraf/telegraf.conf
+  grafana:
+    image: grafana/grafana:8.0.2
+    container_name: grafana
+    env_file: configuration.env
+    links:
+      - influxdb
+    ports:
+      - '3000:3000'
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+      - ./grafana/dashboards/:/var/lib/grafana/dashboards/
